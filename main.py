@@ -53,11 +53,17 @@ async def start_cmd(message: types.Message):
 @dp.message_handler(commands=["begin"])
 async def ask_which_to_begin(message: types.Message):
     uid = str(message.from_user.id)
+
     if uid not in user_trackers or not user_trackers[uid]:
         await message.reply("У тебя нет трекеров. Добавь командой /add", reply_markup=main_menu)
         return
+
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    for name in user_trackers.get(uid, []):
+        keyboard.add(KeyboardButton(name))
+
     waiting_for_begin[uid] = True
-    await message.reply("🏁 Какой трекер запустить?")
+    await message.reply("🏁 Какой трекер запустить?", reply_markup=keyboard)
 
 
 @dp.message_handler(commands=["my"])
