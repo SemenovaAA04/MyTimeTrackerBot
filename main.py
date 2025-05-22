@@ -213,25 +213,8 @@ async def report_week(message: types.Message):
     text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in summary.items())
     await message.reply(f"📅 Отчёт за 7 дней:\n{text}")
 
-from flask import Flask
-from threading import Thread
-
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "Бот работает!"
-
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     load_data()
-    keep_alive()
     executor.start_polling(dp, skip_updates=True)
