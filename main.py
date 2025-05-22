@@ -120,8 +120,9 @@ async def catch_tracker_name(message: types.Message):
         if name not in user_trackers.get(uid, []):
             await message.reply("Такого трекера нет.", reply_markup=main_menu)
         else:
-            start_times[uid] = {"name": name, "start": datetime.now().isoformat()}
-            await message.reply(f"⏱ Засекли «{name}»!")
+              start_times[uid] = {"name": name, "start": datetime.now().isoformat()}
+            await message.reply(f"⏱ Засекли «{name}»!", reply_markup=main_menu)
+
         waiting_for_begin.pop(uid)
         return
 
