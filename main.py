@@ -5,7 +5,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from datetime import datetime, date
 import os
 
-API_TOKEN = "7644227252:AAHZ9ouy4TUBgSawYR_b3xGYhw3n4NI0GfM"
+API_TOKEN = "7644227252:AAFYp3aKLB6HlZWxX4h_PBFlDIx1TwHOGaE"
 
 bot = Bot(token=API_TOKEN)
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
