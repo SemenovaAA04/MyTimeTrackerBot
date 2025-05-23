@@ -129,8 +129,7 @@ async def catch_tracker_name(message: types.Message):
         waiting_for_begin.pop(uid)
         return
 
-    # 🟢 Если ждём добавление нового трекера
-if waiting_for_tracker_name.get(uid):
+   if waiting_for_tracker_name.get(uid):
     name = message.text.strip()
 
     cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, name))
@@ -145,7 +144,6 @@ if waiting_for_tracker_name.get(uid):
         await message.reply(f"✅ Трекер «{name}» добавлен!")
 
     waiting_for_tracker_name.pop(uid)
-
 
 
 @dp.message_handler(commands=["report"])
