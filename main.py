@@ -101,24 +101,6 @@ async def end_timer(message: types.Message):
     await message.reply(f"✅ Завершено: «{name}» — {minutes} мин.", reply_markup=main_menu)
 
 
-
-    tracker_logs.setdefault(user_id, [])
-    tracker_logs[user_id].append({
-        "name": name,
-        "minutes": minutes,
-        "date": str(date.today())
-    })
-        cursor.execute(
-    "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
-    (user_id, name, minutes, str(date.today()))
-)
-conn.commit()
-
-
-    await message.reply(f"✅ Завершено: «{name}» — {minutes} мин.")
-    del start_times[user_id]
-
-
 @dp.message_handler(commands=["add"])
 async def ask_for_tracker_name(message: types.Message):
     uid = str(message.from_user.id)
