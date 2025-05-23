@@ -3,6 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from datetime import datetime, date
+from database import conn, cursor
 import os
 
 API_TOKEN = "7644227252:AAFOJb5DJlONCNziYAEJTT3oKJhPoa0n504"
@@ -26,21 +27,16 @@ dp = Dispatcher(bot)
 
 # Сохраняем время старта
 start_times = {}
-user_trackers = {}
 waiting_for_tracker_name = {}
 waiting_for_begin = {}
 waiting_for_delete = {}
 tracker_logs = {}
 
-
-def save_data():
-    with open("data.json", "w") as f:
-        json.dump({
-            "user_trackers": user_trackers,
-            "start_times": start_times,
-            "tracker_logs": tracker_logs
-        }, f, indent=2)
-
+cursor.execute(
+    "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
+    (user_id, name, minutes, str(date.today()))
+)
+conn.commit()
 
 @dp.message_handler(commands=["start"])
 async def start_cmd(message: types.Message):
@@ -97,7 +93,6 @@ async def end_timer(message: types.Message):
         "minutes": minutes,
         "date": str(date.today())
     })
-    save_data()
 
     await message.reply(f"✅ Завершено: «{name}» — {minutes} мин.")
     del start_times[user_id]
@@ -130,26 +125,18 @@ async def catch_tracker_name(message: types.Message):
     if waiting_for_tracker_name.get(uid):
         name = message.text.strip()
         user_trackers.setdefault(uid, [])
-        if name in user_trackers[uid]:
-            await message.reply("Такой трекер уже есть.")
-        else:
-            user_trackers[uid].append(name) 
-            save_data()
-            await message.reply(f"✅ Трекер «{name}» добавлен!")
+if name in user_trackers.get(uid, []):
+    await message.reply("Такой трекер уже есть.")
+else:
+    user_trackers.setdefault(uid, []).append(name)  # временно сохраняем в памяти
+    cursor.execute(
+        "INSERT INTO trackers (user_id, name) VALUES (?, ?)",
+        (uid, name)
+    )
+    conn.commit()
+    await message.reply(f"✅ Трекер «{name}» добавлен!")
         waiting_for_tracker_name.pop(uid)
 
-def load_data():
-    global user_trackers, start_times, tracker_logs
-    try:
-        with open("data.json", "r") as f:
-            saved = json.load(f)
-            user_trackers = saved.get("user_trackers", {})
-            start_times = saved.get("start_times", {})
-            tracker_logs = saved.get("tracker_logs", {})
-    except FileNotFoundError:
-        user_trackers = {}
-        start_times = {}
-        tracker_logs = {}
 
 @dp.message_handler(commands=["report"])
 async def report(message: types.Message):
@@ -223,5 +210,4 @@ async def report_week(message: types.Message):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    load_data()
     executor.start_polling(dp, skip_updates=True)
