@@ -91,7 +91,6 @@ async def end_timer(message: types.Message):
     start_dt = datetime.fromisoformat(start_str)
     duration = datetime.now() - start_dt
     minutes = duration.seconds // 60
-
     cursor.execute(
         "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
         (user_id, name, minutes, str(date.today()))
