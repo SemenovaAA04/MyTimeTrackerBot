@@ -150,70 +150,65 @@ async def catch_tracker_name(message: types.Message):
 @dp.message_handler(commands=["report"])
 async def report(message: types.Message):
     uid = str(message.from_user.id)
-    logs = tracker_logs.get(uid, [])
 
-    if not logs:
+    cursor.execute("""
+        SELECT name, SUM(minutes) 
+        FROM logs 
+        WHERE user_id = ? 
+        GROUP BY name
+    """, (uid,))
+    rows = cursor.fetchall()
+
+    if not rows:
         await message.reply("Пока нет завершённых трекеров.")
         return
 
-    summary = {}
-    for entry in logs:
-        name = entry["name"]
-        summary[name] = summary.get(name, 0) + entry["minutes"]
-
-    text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in summary.items())
+    text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply("📊 Отчёт:\n" + text)
+
 
 @dp.message_handler(commands=["day"])
 async def report_today(message: types.Message):
-    from datetime import date
-    today = str(date.today())
     uid = str(message.from_user.id)
-    logs = tracker_logs.get(uid, [])
+    today = str(date.today())
 
-    today_logs = [entry for entry in logs if entry["date"] == today]
+    cursor.execute("""
+        SELECT name, SUM(minutes) 
+        FROM logs 
+        WHERE user_id = ? AND date = ? 
+        GROUP BY name
+    """, (uid, today))
+    rows = cursor.fetchall()
 
-    if not today_logs:
+    if not rows:
         await message.reply("Сегодня ты ещё ничего не засекала.")
         return
 
-    summary = {}
-    for entry in today_logs:
-        name = entry["name"]
-        summary[name] = summary.get(name, 0) + entry["minutes"]
-
-    text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in summary.items())
+    text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply(f"📅 Сегодняшний отчёт:\n{text}")
 
 @dp.message_handler(commands=["week"])
 async def report_week(message: types.Message):
     from datetime import datetime, timedelta
     uid = str(message.from_user.id)
-    logs = tracker_logs.get(uid, [])
-
-    if not logs:
-        await message.reply("У тебя пока нет завершённых трекеров.")
-        return
 
     today = datetime.today()
     week_ago = today - timedelta(days=7)
+    week_ago_str = week_ago.date().isoformat()
 
-    summary = {}
-    for entry in logs:
-        try:
-            entry_date = datetime.strptime(entry["date"], "%Y-%m-%d")
-        except:
-            continue 
+    cursor.execute("""
+        SELECT name, SUM(minutes) 
+        FROM logs 
+        WHERE user_id = ? AND date >= ?
+        GROUP BY name
+    """, (uid, week_ago_str))
+    rows = cursor.fetchall()
 
-        if week_ago <= entry_date <= today:
-            name = entry["name"]
-            summary[name] = summary.get(name, 0) + entry["minutes"]
-
-    if not summary:
+    if not rows:
         await message.reply("За последнюю неделю нет засеченного времени.")
         return
 
-    text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in summary.items())
+    text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply(f"📅 Отчёт за 7 дней:\n{text}")
 
 
