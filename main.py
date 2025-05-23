@@ -130,19 +130,22 @@ async def catch_tracker_name(message: types.Message):
         return
 
     # 🟢 Если ждём добавление нового трекера
-        if waiting_for_tracker_name.get(uid):
-        name = message.text.strip()
+if waiting_for_tracker_name.get(uid):
+    name = message.text.strip()
 
-        if name in user_trackers[uid]:
-            await message.reply("Такой трекер уже есть.")
-        else:
-            cursor.execute(
-                "INSERT INTO trackers (user_id, name) VALUES (?, ?)",
-                (uid, name)
-            )
-            conn.commit()
-            await message.reply(f"✅ Трекер «{name}» добавлен!")
-        waiting_for_tracker_name.pop(uid)
+    cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, name))
+    if cursor.fetchone():
+        await message.reply("Такой трекер уже есть.")
+    else:
+        cursor.execute(
+            "INSERT INTO trackers (user_id, name) VALUES (?, ?)",
+            (uid, name)
+        )
+        conn.commit()
+        await message.reply(f"✅ Трекер «{name}» добавлен!")
+
+    waiting_for_tracker_name.pop(uid)
+
 
 
 @dp.message_handler(commands=["report"])
