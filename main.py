@@ -45,13 +45,18 @@ async def start_cmd(message: types.Message):
 async def ask_which_to_begin(message: types.Message):
     uid = str(message.from_user.id)
 
-    if uid not in user_trackers or not user_trackers[uid]:
+    # Запрашиваем трекеры из базы
+    cursor.execute("SELECT name FROM trackers WHERE user_id = ?", (uid,))
+    rows = cursor.fetchall()
+
+    if not rows:
         await message.reply("У тебя нет трекеров. Добавь командой /add", reply_markup=main_menu)
         return
 
+    # Формируем клавиатуру
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    for name in user_trackers.get(uid, []):
-        keyboard.add(KeyboardButton(name))
+    for row in rows:
+        keyboard.add(KeyboardButton(row[0]))
 
     waiting_for_begin[uid] = True
     await message.reply("🏁 Какой трекер запустить?", reply_markup=keyboard)
@@ -60,13 +65,15 @@ async def ask_which_to_begin(message: types.Message):
 @dp.message_handler(commands=["my"])
 async def my_trackers(message: types.Message):
     uid = str(message.from_user.id)
-    trackers = user_trackers.get(uid, [])
+    cursor.execute("SELECT name FROM trackers WHERE user_id = ?", (uid,))
+    rows = cursor.fetchall()
 
-    if not trackers:
+    if not rows:
         await message.reply("У тебя пока нет трекеров. Добавь командой /add", reply_markup=main_menu)
-    else:
-        text = "\n".join(f"• {name}" for name in trackers)
-        await message.reply("📋 Твои трекеры:\n" + text)
+        return
+
+    text = "\n".join(f"• {row[0]}" for row in rows)
+    await message.reply("📋 Твои трекеры:\n" + text)
 
 
 @dp.message_handler(commands=["end"])
