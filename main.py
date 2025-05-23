@@ -32,11 +32,6 @@ waiting_for_begin = {}
 waiting_for_delete = {}
 tracker_logs = {}
 
-cursor.execute(
-    "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
-    (user_id, name, minutes, str(date.today()))
-)
-conn.commit()
 
 @dp.message_handler(commands=["start"])
 async def start_cmd(message: types.Message):
@@ -93,6 +88,12 @@ async def end_timer(message: types.Message):
         "minutes": minutes,
         "date": str(date.today())
     })
+        cursor.execute(
+    "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
+    (user_id, name, minutes, str(date.today()))
+)
+conn.commit()
+
 
     await message.reply(f"✅ Завершено: «{name}» — {minutes} мин.")
     del start_times[user_id]
@@ -122,19 +123,20 @@ async def catch_tracker_name(message: types.Message):
         return
 
     # 🟢 Если ждём добавление нового трекера
-    if waiting_for_tracker_name.get(uid):
+        if waiting_for_tracker_name.get(uid):
         name = message.text.strip()
         user_trackers.setdefault(uid, [])
-if name in user_trackers.get(uid, []):
-    await message.reply("Такой трекер уже есть.")
-else:
-    user_trackers.setdefault(uid, []).append(name)  # временно сохраняем в памяти
-    cursor.execute(
-        "INSERT INTO trackers (user_id, name) VALUES (?, ?)",
-        (uid, name)
-    )
-    conn.commit()
-    await message.reply(f"✅ Трекер «{name}» добавлен!")
+
+        if name in user_trackers[uid]:
+            await message.reply("Такой трекер уже есть.")
+        else:
+            user_trackers[uid].append(name)
+            cursor.execute(
+                "INSERT INTO trackers (user_id, name) VALUES (?, ?)",
+                (uid, name)
+            )
+            conn.commit()
+            await message.reply(f"✅ Трекер «{name}» добавлен!")
         waiting_for_tracker_name.pop(uid)
 
 
