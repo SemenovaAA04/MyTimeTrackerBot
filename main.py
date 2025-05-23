@@ -132,12 +132,10 @@ async def catch_tracker_name(message: types.Message):
     # 🟢 Если ждём добавление нового трекера
         if waiting_for_tracker_name.get(uid):
         name = message.text.strip()
-        user_trackers.setdefault(uid, [])
 
         if name in user_trackers[uid]:
             await message.reply("Такой трекер уже есть.")
         else:
-            user_trackers[uid].append(name)
             cursor.execute(
                 "INSERT INTO trackers (user_id, name) VALUES (?, ?)",
                 (uid, name)
