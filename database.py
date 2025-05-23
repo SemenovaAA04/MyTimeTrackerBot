@@ -22,3 +22,11 @@ CREATE TABLE IF NOT EXISTS logs (
 conn.commit()
 conn.close()
 
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS active_sessions (
+    user_id TEXT PRIMARY KEY,
+    name TEXT,
+    start TEXT
+)
+""")
+
