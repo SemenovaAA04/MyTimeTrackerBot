@@ -80,14 +80,28 @@ async def my_trackers(message: types.Message):
 async def end_timer(message: types.Message):
     user_id = str(message.from_user.id)
 
-    if user_id not in start_times:
+    cursor.execute("SELECT name, start FROM active_sessions WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+
+    if not result:
         await message.reply("Ты не запускал таймер. Напиши /begin.", reply_markup=main_menu)
         return
 
-    start_info = start_times[user_id]
-    duration = datetime.now() - start_info["start"]
+    name, start_str = result
+    start_dt = datetime.fromisoformat(start_str)
+    duration = datetime.now() - start_dt
     minutes = duration.seconds // 60
-    name = start_info["name"]
+
+    cursor.execute(
+        "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
+        (user_id, name, minutes, str(date.today()))
+    )
+    cursor.execute("DELETE FROM active_sessions WHERE user_id = ?", (user_id,))
+    conn.commit()
+
+    await message.reply(f"✅ Завершено: «{name}» — {minutes} мин.", reply_markup=main_menu)
+
+
 
     tracker_logs.setdefault(user_id, [])
     tracker_logs[user_id].append({
@@ -123,7 +137,11 @@ async def catch_tracker_name(message: types.Message):
         if name not in user_trackers.get(uid, []):
             await message.reply("Такого трекера нет.", reply_markup=main_menu)
         else:
-              start_times[uid] = {"name": name, "start": datetime.now().isoformat()}
+              cursor.execute(
+                  "REPLACE INTO active_sessions (user_id, name, start) VALUES (?, ?, ?)",
+                 (uid, name, datetime.now().isoformat())
+              )
+              conn.commit()
               await message.reply(f"⏱ Засекли «{name}»!", reply_markup=main_menu)
 
         waiting_for_begin.pop(uid)
