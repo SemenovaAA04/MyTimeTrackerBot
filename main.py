@@ -22,15 +22,12 @@ main_menu.add(
     KeyboardButton("/week")
 )
 
-
 dp = Dispatcher(bot)
 
-# Сохраняем время старта
+# Временные состояния
 start_times = {}
 waiting_for_tracker_name = {}
 waiting_for_begin = {}
-waiting_for_delete = {}
-tracker_logs = {}
 
 
 @dp.message_handler(commands=["start"])
@@ -44,8 +41,6 @@ async def start_cmd(message: types.Message):
 @dp.message_handler(commands=["begin"])
 async def ask_which_to_begin(message: types.Message):
     uid = str(message.from_user.id)
-
-    # Запрашиваем трекеры из базы
     cursor.execute("SELECT name FROM trackers WHERE user_id = ?", (uid,))
     rows = cursor.fetchall()
 
@@ -53,13 +48,12 @@ async def ask_which_to_begin(message: types.Message):
         await message.reply("У тебя нет трекеров. Добавь командой /add", reply_markup=main_menu)
         return
 
-    # Формируем клавиатуру
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     for row in rows:
         keyboard.add(KeyboardButton(row[0]))
 
     waiting_for_begin[uid] = True
-    await message.reply("🏁 Какой трекер запустить?", reply_markup=keyboard)
+    await message.reply("🏋️ Какой трекер запустить?", reply_markup=keyboard)
 
 
 @dp.message_handler(commands=["my"])
@@ -91,6 +85,7 @@ async def end_timer(message: types.Message):
     start_dt = datetime.fromisoformat(start_str)
     duration = datetime.now() - start_dt
     minutes = duration.seconds // 60
+
     cursor.execute(
         "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
         (user_id, name, minutes, str(date.today()))
@@ -106,54 +101,47 @@ async def ask_for_tracker_name(message: types.Message):
     uid = str(message.from_user.id)
     waiting_for_tracker_name[uid] = True
     await message.reply(
-        "📝 Отлично! Напиши название трекера, который хочешь добавить.", reply_markup=main_menu)
+        "🗘️ Отлично! Напиши название трекера, который хочешь добавить.", reply_markup=main_menu)
+
 
 @dp.message_handler()
 async def catch_tracker_name(message: types.Message):
     uid = str(message.from_user.id)
 
-    # 🟡 Если ждём запуск трекера
     if waiting_for_begin.get(uid):
         name = message.text.strip()
         cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, name))
-    if not cursor.fetchone():
-        await message.reply("Такого трекера нет.", reply_markup=main_menu)
-    else:
-        cursor.execute(
-            "REPLACE INTO active_sessions (user_id, name, start) VALUES (?, ?, ?)",
-            (uid, name, datetime.now().isoformat())
-        )
-        conn.commit()
-        await message.reply(f"⏱ Засекли «{name}»!", reply_markup=main_menu)
-
+        if not cursor.fetchone():
+            await message.reply("Такого трекера нет.", reply_markup=main_menu)
+        else:
+            cursor.execute(
+                "REPLACE INTO active_sessions (user_id, name, start) VALUES (?, ?, ?)",
+                (uid, name, datetime.now().isoformat())
+            )
+            conn.commit()
+            await message.reply(f"⏱ Засекли «{name}»!", reply_markup=main_menu)
         waiting_for_begin.pop(uid)
         return
 
-   if waiting_for_tracker_name.get(uid):
-    name = message.text.strip()
-
-    cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, name))
-    if cursor.fetchone():
-        await message.reply("Такой трекер уже есть.")
-    else:
-        cursor.execute(
-            "INSERT INTO trackers (user_id, name) VALUES (?, ?)",
-            (uid, name)
-        )
-        conn.commit()
-        await message.reply(f"✅ Трекер «{name}» добавлен!")
-
-    waiting_for_tracker_name.pop(uid)
+    if waiting_for_tracker_name.get(uid):
+        name = message.text.strip()
+        cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, name))
+        if cursor.fetchone():
+            await message.reply("Такой трекер уже есть.")
+        else:
+            cursor.execute("INSERT INTO trackers (user_id, name) VALUES (?, ?)", (uid, name))
+            conn.commit()
+            await message.reply(f"✅ Трекер «{name}» добавлен!")
+        waiting_for_tracker_name.pop(uid)
 
 
 @dp.message_handler(commands=["report"])
 async def report(message: types.Message):
     uid = str(message.from_user.id)
-
     cursor.execute("""
-        SELECT name, SUM(minutes) 
-        FROM logs 
-        WHERE user_id = ? 
+        SELECT name, SUM(minutes)
+        FROM logs
+        WHERE user_id = ?
         GROUP BY name
     """, (uid,))
     rows = cursor.fetchall()
@@ -170,11 +158,10 @@ async def report(message: types.Message):
 async def report_today(message: types.Message):
     uid = str(message.from_user.id)
     today = str(date.today())
-
     cursor.execute("""
-        SELECT name, SUM(minutes) 
-        FROM logs 
-        WHERE user_id = ? AND date = ? 
+        SELECT name, SUM(minutes)
+        FROM logs
+        WHERE user_id = ? AND date = ?
         GROUP BY name
     """, (uid, today))
     rows = cursor.fetchall()
@@ -186,21 +173,17 @@ async def report_today(message: types.Message):
     text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply(f"📅 Сегодняшний отчёт:\n{text}")
 
+
 @dp.message_handler(commands=["week"])
 async def report_week(message: types.Message):
-    from datetime import datetime, timedelta
     uid = str(message.from_user.id)
-
-    today = datetime.today()
-    week_ago = today - timedelta(days=7)
-    week_ago_str = week_ago.date().isoformat()
-
+    week_ago = (datetime.today() - timedelta(days=7)).date().isoformat()
     cursor.execute("""
-        SELECT name, SUM(minutes) 
-        FROM logs 
+        SELECT name, SUM(minutes)
+        FROM logs
         WHERE user_id = ? AND date >= ?
         GROUP BY name
-    """, (uid, week_ago_str))
+    """, (uid, week_ago))
     rows = cursor.fetchall()
 
     if not rows:
