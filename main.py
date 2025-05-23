@@ -101,7 +101,7 @@ async def ask_for_tracker_name(message: types.Message):
     uid = str(message.from_user.id)
     waiting_for_tracker_name[uid] = True
     await message.reply(
-        "🗘️ Отлично! Напиши название трекера, который хочешь добавить.", reply_markup=main_menu)
+        "📝 Отлично! Напиши название трекера, который хочешь добавить.", reply_markup=main_menu)
 
 
 @dp.message_handler()
@@ -112,7 +112,7 @@ async def catch_tracker_name(message: types.Message):
         name = message.text.strip()
         cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, name))
         if not cursor.fetchone():
-            await message.reply("Такого трекера нет.", reply_markup=main_menu)
+            await message.reply("Такого трекера нет 🫣.", reply_markup=main_menu)
         else:
             cursor.execute(
                 "REPLACE INTO active_sessions (user_id, name, start) VALUES (?, ?, ?)",
