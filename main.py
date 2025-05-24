@@ -112,19 +112,19 @@ async def cmd_my(message: types.Message):
 @dp.message_handler(commands=["begin"])
 async def cmd_begin(message: types.Message):
     uid = str(message.from_user.id)
-    cursor.execute("SELECT name FROM trackers WHERE user_id = ?", (uid,))
-    rows = cursor.fetchall()
+    trackers = get_trackers(uid)
 
-    if not rows:
+    if not trackers:
         await message.reply("У тебя нет трекеров. Добавь командой /add", reply_markup=main_menu)
         return
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    for (name,) in rows:
+    for name in trackers:
         kb.add(KeyboardButton(name))
 
     waiting_for_begin[uid] = True
     await message.reply("🏁 Какой трекер запустить?", reply_markup=kb)
+
 
 
 @dp.message_handler(commands=["end"])
