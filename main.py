@@ -237,7 +237,6 @@ async def cmd_week(message: types.Message):
 
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    keep_alive()                       # запустили веб-сервер на 8080
     logging.basicConfig(level=logging.INFO)
     executor.start_polling(dp, skip_updates=True)
 
