@@ -2,7 +2,8 @@ import logging
 import os
 import sqlite3
 from datetime import datetime, date, timedelta
-
+from flask import Flask
+from threading import Thread
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
@@ -250,7 +251,25 @@ async def cmd_week(message: types.Message):
     text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply(f"📅 Отчёт за 7 дней:\n{text}", reply_markup=main_menu)
 
+# простой HTTP-сервер для «здоровья» (healthcheck)
+app = Flask(__name__)
+
+@app.route("/")
+def healthcheck():
+    return "OK", 200
+
+def run_web():
+    # Render ожидает порт 8080
+    app.run(host="0.0.0.0", port=8080)
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.daemon = True
+    t.start()
+
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    keep_alive()                       # запустили веб-сервер на 8080
     logging.basicConfig(level=logging.INFO)
     executor.start_polling(dp, skip_updates=True)
+
