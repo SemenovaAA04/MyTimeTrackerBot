@@ -3,12 +3,13 @@ import os
 import sqlite3
 from datetime import datetime, date, timedelta
 from flask import Flask
-from database import add_tracker, tracker_exists, get_trackers
 from threading import Thread
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from database import init_db
-init_db()
+from database import add_tracker, tracker_exists, get_trackers, init_db
+
+init_db()  
+
 
 
 API_TOKEN = os.getenv("API_TOKEN")
