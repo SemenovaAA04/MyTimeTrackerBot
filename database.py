@@ -89,4 +89,52 @@ def get_trackers(user_id):
         cursor.close()
         conn.close()
 
+def set_active_session(user_id, name, start):
+    conn, cursor = get_conn_cursor()
+    try:
+        if DATABASE_URL:
+            cursor.execute(
+                "INSERT INTO active_sessions (user_id, name, start) VALUES (%s, %s, %s) ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name, start = EXCLUDED.start;",
+                (user_id, name, start)
+            )
+        else:
+            cursor.execute(
+                "INSERT OR REPLACE INTO active_sessions (user_id, name, start) VALUES (?, ?, ?);",
+                (user_id, name, start)
+            )
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_user_active_sessions(user_id):
+    conn, cursor = get_conn_cursor()
+    try:
+        if DATABASE_URL:
+            cursor.execute("SELECT name, start FROM active_sessions WHERE user_id = %s", (user_id,))
+        else:
+            cursor.execute("SELECT name, start FROM active_sessions WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            # Для Postgres row — словарь, для SQLite — кортеж
+            if DATABASE_URL:
+                return row["name"], row["start"]
+            else:
+                return row[0], row[1]
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+def delete_active_session(user_id):
+    conn, cursor = get_conn_cursor()
+    try:
+        if DATABASE_URL:
+            cursor.execute("DELETE FROM active_sessions WHERE user_id = %s", (user_id,))
+        else:
+            cursor.execute("DELETE FROM active_sessions WHERE user_id = ?", (user_id,))
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
 
