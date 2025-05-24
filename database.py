@@ -155,4 +155,81 @@ def add_log(user_id, name, minutes, date_str):
     finally:
         cursor.close()
         conn.close()
+def get_report(user_id):
+    conn, cursor = get_conn_cursor()
+    try:
+        if DATABASE_URL:
+            cursor.execute("""
+                SELECT name, SUM(minutes) as total_minutes
+                FROM logs
+                WHERE user_id = %s
+                GROUP BY name
+            """, (user_id,))
+        else:
+            cursor.execute("""
+                SELECT name, SUM(minutes) as total_minutes
+                FROM logs
+                WHERE user_id = ?
+                GROUP BY name
+            """, (user_id,))
+        rows = cursor.fetchall()
+        if DATABASE_URL:
+            return [(row["name"], row["total_minutes"]) for row in rows]
+        else:
+            return [(row[0], row[1]) for row in rows]
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_day_report(user_id, day):
+    conn, cursor = get_conn_cursor()
+    try:
+        if DATABASE_URL:
+            cursor.execute("""
+                SELECT name, SUM(minutes) as total_minutes
+                FROM logs
+                WHERE user_id = %s AND date = %s
+                GROUP BY name
+            """, (user_id, day))
+        else:
+            cursor.execute("""
+                SELECT name, SUM(minutes) as total_minutes
+                FROM logs
+                WHERE user_id = ? AND date = ?
+                GROUP BY name
+            """, (user_id, day))
+        rows = cursor.fetchall()
+        if DATABASE_URL:
+            return [(row["name"], row["total_minutes"]) for row in rows]
+        else:
+            return [(row[0], row[1]) for row in rows]
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_week_report(user_id, date_from):
+    conn, cursor = get_conn_cursor()
+    try:
+        if DATABASE_URL:
+            cursor.execute("""
+                SELECT name, SUM(minutes) as total_minutes
+                FROM logs
+                WHERE user_id = %s AND date >= %s
+                GROUP BY name
+            """, (user_id, date_from))
+        else:
+            cursor.execute("""
+                SELECT name, SUM(minutes) as total_minutes
+                FROM logs
+                WHERE user_id = ? AND date >= ?
+                GROUP BY name
+            """, (user_id, date_from))
+        rows = cursor.fetchall()
+        if DATABASE_URL:
+            return [(row["name"], row["total_minutes"]) for row in rows]
+        else:
+            return [(row[0], row[1]) for row in rows]
+    finally:
+        cursor.close()
+        conn.close()
 
