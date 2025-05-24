@@ -138,3 +138,21 @@ def delete_active_session(user_id):
         cursor.close()
         conn.close()
 
+def add_log(user_id, name, minutes, date_str):
+    conn, cursor = get_conn_cursor()
+    try:
+        if DATABASE_URL:
+            cursor.execute(
+                "INSERT INTO logs (user_id, name, minutes, date) VALUES (%s, %s, %s, %s)",
+                (user_id, name, minutes, date_str)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
+                (user_id, name, minutes, date_str)
+            )
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
