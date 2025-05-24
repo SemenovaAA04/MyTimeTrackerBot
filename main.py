@@ -131,27 +131,21 @@ async def cmd_begin(message: types.Message):
 @dp.message_handler(commands=["end"])
 async def cmd_end(message: types.Message):
     uid = str(message.from_user.id)
-    cursor.execute("SELECT name, start FROM active_sessions WHERE user_id = ?", (uid,))
-    row = cursor.fetchone()
+    session = get_user_active_sessions(uid)
 
-    if not row:
+    if not session:
         await message.reply("Ты не запускал таймер. Напиши /begin.", reply_markup=main_menu)
         return
 
-    name, start_str = row
+    name, start_str = session
     start_dt = datetime.fromisoformat(start_str)
-    minutes = (datetime.now() - start_dt).seconds // 60
+    minutes = int((datetime.now() - start_dt).total_seconds() // 60)  # Исправленная формула
 
-    # сохраняем в логи
-    cursor.execute(
-        "INSERT INTO logs (user_id, name, minutes, date) VALUES (?, ?, ?, ?)",
-        (uid, name, minutes, date.today().isoformat())
-    )
-    # удаляем сессию
-    cursor.execute("DELETE FROM active_sessions WHERE user_id = ?", (uid,))
-    conn.commit()
+    add_log(uid, name, minutes, date.today().isoformat())
+    delete_active_session(uid)
 
     await message.reply(f"✅ Завершено: «{name}» — {minutes} мин.", reply_markup=main_menu)
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Обработчик «всех остальных сообщений» — т.н. FSM-lite
