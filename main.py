@@ -2,8 +2,6 @@ import logging
 import os
 import sqlite3
 from datetime import datetime, date, timedelta
-from flask import Flask
-from threading import Thread
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from database import add_tracker, tracker_exists, get_trackers, init_db
@@ -157,7 +155,7 @@ async def catch_tracker_name(message: types.Message):
     uid = str(message.from_user.id)
     text = message.text.strip()
 
-    # ★ Запускаем трекер
+    # Запускаем трекер
     if waiting_for_begin.get(uid):
         # проверяем, существует ли такой
         cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, text))
@@ -173,9 +171,8 @@ async def catch_tracker_name(message: types.Message):
         waiting_for_begin.pop(uid)
         return
 
-    # ★ Добавляем новый трекер
+    # Добавляем новый трекер
     if waiting_for_tracker_name.get(uid):
-        # проверяем на дубли
         cursor.execute("SELECT 1 FROM trackers WHERE user_id = ? AND name = ?", (uid, text))
         if cursor.fetchone():
             await message.reply("Такой трекер уже есть.", reply_markup=main_menu)
@@ -236,20 +233,7 @@ async def cmd_week(message: types.Message):
     await message.reply(f"📅 Отчёт за 7 дней:\n{text}", reply_markup=main_menu)
 
 
-app = Flask(__name__)
 
-@app.route("/")
-def healthcheck():
-    return "OK", 200
-
-def run_web():
-    # Render ожидает порт 8080
-    app.run(host="0.0.0.0", port=8080)
-
-def keep_alive():
-    t = Thread(target=run_web)
-    t.daemon = True
-    t.start()
 
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
