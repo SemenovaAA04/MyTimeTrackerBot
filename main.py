@@ -2,7 +2,7 @@ import json
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from database import conn, cursor
 import os
 
@@ -133,6 +133,7 @@ async def catch_tracker_name(message: types.Message):
             conn.commit()
             await message.reply(f"✅ Трекер «{name}» добавлен!")
         waiting_for_tracker_name.pop(uid)
+        return
 
 
 @dp.message_handler(commands=["report"])
