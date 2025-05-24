@@ -7,7 +7,9 @@ from threading import Thread
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-API_TOKEN = os.getenv("API_TOKEN", "7644227252:AAFOJb5DJlONCNziYAEJTT3oKJhPoa0n504")
+API_TOKEN = os.getenv("API_TOKEN")
+if not API_TOKEN:
+    raise RuntimeError("API_TOKEN is not set")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Настраиваем соединение с базой (database.py просто делает conn и cursor)
