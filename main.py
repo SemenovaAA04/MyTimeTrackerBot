@@ -6,6 +6,9 @@ from flask import Flask
 from threading import Thread
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from database import init_db
+init_db()
+
 
 API_TOKEN = os.getenv("API_TOKEN")
 if not API_TOKEN:
