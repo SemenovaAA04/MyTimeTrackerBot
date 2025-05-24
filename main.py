@@ -8,6 +8,7 @@ from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from database import add_tracker, tracker_exists, get_trackers, init_db
 from database import set_active_session, get_user_active_sessions, delete_active_session
+from database import get_report, get_day_report, get_week_report
 from database import add_log
 
 
