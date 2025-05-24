@@ -97,19 +97,16 @@ async def cmd_add(message: types.Message):
 @dp.message_handler(commands=["my"])
 async def cmd_my(message: types.Message):
     uid = str(message.from_user.id)
-    cursor.execute("SELECT name FROM trackers WHERE user_id = ?", (uid,))
-    rows = cursor.fetchall()
+    trackers = get_trackers(uid)
 
-    if not rows:
+    if not trackers:
         await message.reply("У тебя пока нет трекеров. Добавь командой /add", reply_markup=main_menu)
         return
 
-    text = "\n".join(f"• {r[0]}" for r in rows)
+    text = "\n".join(f"• {name}" for name in trackers)
     await message.reply(f"📋 Твои трекеры:\n{text}", reply_markup=main_menu)
 
-# ──────────────────────────────────────────────────────────────────────────────
-# /begin — предложить выбрать трекер для запуска
-# ──────────────────────────────────────────────────────────────────────────────
+
 @dp.message_handler(commands=["begin"])
 async def cmd_begin(message: types.Message):
     uid = str(message.from_user.id)
@@ -127,9 +124,7 @@ async def cmd_begin(message: types.Message):
     waiting_for_begin[uid] = True
     await message.reply("🏁 Какой трекер запустить?", reply_markup=kb)
 
-# ──────────────────────────────────────────────────────────────────────────────
-# /end — завершить текущий таймер
-# ──────────────────────────────────────────────────────────────────────────────
+
 @dp.message_handler(commands=["end"])
 async def cmd_end(message: types.Message):
     uid = str(message.from_user.id)
