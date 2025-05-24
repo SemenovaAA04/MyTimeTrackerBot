@@ -44,29 +44,3 @@ def init_db():
     cursor.close()
     conn.close()
 
-
-# 4. Создаём все таблицы, если их ещё нет
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS trackers (
-  user_id TEXT,
-  name TEXT,
-  PRIMARY KEY (user_id, name)
-);
-""")
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS active_sessions (
-  user_id TEXT PRIMARY KEY,
-  name TEXT,
-  start TEXT
-);
-""")
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS logs (
-  id SERIAL PRIMARY KEY,
-  user_id TEXT,
-  name TEXT,
-  minutes INTEGER,
-  date DATE
-);
-""")
-conn.commit()
