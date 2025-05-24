@@ -192,13 +192,7 @@ async def catch_tracker_name(message: types.Message):
 @dp.message_handler(commands=["report"])
 async def cmd_report(message: types.Message):
     uid = str(message.from_user.id)
-    cursor.execute("""
-        SELECT name, SUM(minutes)
-        FROM logs
-        WHERE user_id = ?
-        GROUP BY name
-    """, (uid,))
-    rows = cursor.fetchall()
+    rows = get_report(uid)
 
     if not rows:
         await message.reply("Пока нет завершённых трекеров.", reply_markup=main_menu)
@@ -207,6 +201,7 @@ async def cmd_report(message: types.Message):
     text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply("📊 Отчёт:\n" + text, reply_markup=main_menu)
 
+
 # ──────────────────────────────────────────────────────────────────────────────
 # /day — отчёт за сегодня
 # ──────────────────────────────────────────────────────────────────────────────
@@ -214,20 +209,15 @@ async def cmd_report(message: types.Message):
 async def cmd_day(message: types.Message):
     uid = str(message.from_user.id)
     today = date.today().isoformat()
-    cursor.execute("""
-        SELECT name, SUM(minutes)
-        FROM logs
-        WHERE user_id = ? AND date = ?
-        GROUP BY name
-    """, (uid, today))
-    rows = cursor.fetchall()
+    rows = get_day_report(uid, today)
 
     if not rows:
-        await message.reply("Сегодня ты ещё ничего не засекала.", reply_markup=main_menu)
+        await message.reply("Сегодня ты ещё ничего не засекал(а).", reply_markup=main_menu)
         return
 
     text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply(f"📅 Сегодняшний отчёт:\n{text}", reply_markup=main_menu)
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # /week — отчёт за последние 7 дней
@@ -236,13 +226,7 @@ async def cmd_day(message: types.Message):
 async def cmd_week(message: types.Message):
     uid = str(message.from_user.id)
     week_ago = (date.today() - timedelta(days=7)).isoformat()
-    cursor.execute("""
-        SELECT name, SUM(minutes)
-        FROM logs
-        WHERE user_id = ? AND date >= ?
-        GROUP BY name
-    """, (uid, week_ago))
-    rows = cursor.fetchall()
+    rows = get_week_report(uid, week_ago)
 
     if not rows:
         await message.reply("За последнюю неделю нет засеченного времени.", reply_markup=main_menu)
@@ -251,7 +235,7 @@ async def cmd_week(message: types.Message):
     text = "\n".join(f"• {name} — {minutes} мин." for name, minutes in rows)
     await message.reply(f"📅 Отчёт за 7 дней:\n{text}", reply_markup=main_menu)
 
-# простой HTTP-сервер для «здоровья» (healthcheck)
+
 app = Flask(__name__)
 
 @app.route("/")
