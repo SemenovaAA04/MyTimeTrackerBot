@@ -104,7 +104,7 @@ async def ask_for_tracker_name(message: types.Message):
         "📝 Отлично! Напиши название трекера, который хочешь добавить.", reply_markup=main_menu)
 
 
-@dp.message_handler()
+@dp.message_handler(lambda message: not message.text.startswith('/'))
 async def catch_tracker_name(message: types.Message):
     uid = str(message.from_user.id)
 
